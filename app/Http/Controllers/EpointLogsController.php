@@ -2,60 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EpointLog;
+use App\Repositories\Contracts\EpointLogRepositoryInterface;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class EpointLogsController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        protected EpointLogRepositoryInterface $logRepository
+    ) {}
+
+    /**
+     * Display logs list with filters
+     */
+    public function index(Request $request): View
     {
-        $query = EpointLog::query()->orderBy('created_at', 'desc');
+        $filters = $request->only([
+            'endpoint',
+            'status',
+            'transaction_id',
+            'order_id',
+            'date_from',
+            'date_to'
+        ]);
 
-        // Filter by endpoint
-        if ($request->filled('endpoint')) {
-            $query->where('api_endpoint', $request->endpoint);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by transaction ID
-        if ($request->filled('transaction_id')) {
-            $query->where('transaction_id', 'like', '%' . $request->transaction_id . '%');
-        }
-
-        // Filter by order ID
-        if ($request->filled('order_id')) {
-            $query->where('order_id', 'like', '%' . $request->order_id . '%');
-        }
-
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from . ' 00:00:00');
-        }
-        if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
-        }
-
-        $logs = $query->paginate(20);
-
-        // Get statistics
-        $stats = [
-            'total' => EpointLog::count(),
-            'today' => EpointLog::whereDate('created_at', today())->count(),
-            'success' => EpointLog::where('status', 'success')->count(),
-            'failed' => EpointLog::whereIn('status', ['failed', 'error'])->count(),
-            'avg_execution_time' => EpointLog::avg('execution_time'),
-        ];
-
-        // Get unique endpoints for filter dropdown
-        $endpoints = EpointLog::select('api_endpoint', 'api_name')
-            ->distinct()
-            ->orderBy('api_name')
-            ->get();
+        $logs = $this->logRepository->getWithFilters($filters, 20);
+        $stats = $this->logRepository->getStatistics();
+        $endpoints = $this->logRepository->getUniqueEndpoints();
 
         return view('epoint.logs.index', compact('logs', 'stats', 'endpoints'));
     }
@@ -63,65 +38,66 @@ class EpointLogsController extends Controller
     /**
      * Show single log details
      */
-    public function show($id)
+    public function show(int $id): View
     {
-        $log = EpointLog::findOrFail($id);
+        $log = $this->logRepository->findById($id);
+
+        if (!$log) {
+            abort(404, 'Log tapılmadı');
+        }
+
         return view('epoint.logs.show', compact('log'));
     }
 
     /**
      * Delete log
      */
-    public function destroy($id)
+    public function destroy(int $id): RedirectResponse
     {
-        $log = EpointLog::findOrFail($id);
-        $log->delete();
+        $deleted = $this->logRepository->delete($id);
+
+        if (!$deleted) {
+            return redirect()->route('epoint.logs.index')
+                ->with('error', 'Log silinə bilmədi');
+        }
 
         return redirect()->route('epoint.logs.index')
-            ->with('success', 'Log deleted successfully');
+            ->with('success', 'Log uğurla silindi');
     }
 
     /**
      * Clear all logs
      */
-    public function clear(Request $request)
+    public function clear(Request $request): RedirectResponse
     {
-        if ($request->has('confirm') && $request->confirm === 'yes') {
-            EpointLog::truncate();
+        if (!$request->has('confirm') || $request->confirm !== 'yes') {
             return redirect()->route('epoint.logs.index')
-                ->with('success', 'All logs cleared successfully');
+                ->with('error', 'Log-ları silmək üçün təsdiq tələb olunur');
         }
 
+        $this->logRepository->truncate();
+
         return redirect()->route('epoint.logs.index')
-            ->with('error', 'Confirmation required to clear logs');
+            ->with('success', 'Bütün log-lar təmizləndi');
     }
 
     /**
      * Export logs to JSON
      */
-    public function export(Request $request)
+    public function export(Request $request): JsonResponse
     {
-        $query = EpointLog::query()->orderBy('created_at', 'desc');
+        $filters = $request->only([
+            'endpoint',
+            'status',
+            'date_from',
+            'date_to'
+        ]);
 
-        // Apply same filters as index
-        if ($request->filled('endpoint')) {
-            $query->where('api_endpoint', $request->endpoint);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from . ' 00:00:00');
-        }
-        if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
-        }
-
-        $logs = $query->get();
+        $logs = $this->logRepository->getWithFilters($filters, PHP_INT_MAX);
 
         $filename = 'epoint_logs_' . date('Y-m-d_His') . '.json';
 
-        return response()->json($logs, 200, [
+        return response()->json($logs->items(), 200, [
             'Content-Type' => 'application/json',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -130,44 +106,16 @@ class EpointLogsController extends Controller
     /**
      * Dashboard with charts
      */
-    public function dashboard()
+    public function dashboard(): View
     {
-        // Logs by endpoint
-        $logsByEndpoint = EpointLog::select('api_name', DB::raw('count(*) as count'))
-            ->groupBy('api_name')
-            ->orderBy('count', 'desc')
-            ->get();
+        $dashboardData = $this->logRepository->getDashboardData();
 
-        // Logs by status
-        $logsByStatus = EpointLog::select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get();
-
-        // Logs by date (last 7 days)
-        $logsByDate = EpointLog::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('count(*) as count')
-        )
-            ->where('created_at', '>=', now()->subDays(7))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
-        // Recent logs
-        $recentLogs = EpointLog::orderBy('created_at', 'desc')->limit(10)->get();
-
-        // Average execution time by endpoint
-        $avgExecutionTime = EpointLog::select('api_name', DB::raw('AVG(execution_time) as avg_time'))
-            ->groupBy('api_name')
-            ->orderBy('avg_time', 'desc')
-            ->get();
-
-        return view('epoint.logs.dashboard', compact(
-            'logsByEndpoint',
-            'logsByStatus',
-            'logsByDate',
-            'recentLogs',
-            'avgExecutionTime'
-        ));
+        return view('epoint.logs.dashboard', [
+            'logsByEndpoint' => $dashboardData['logs_by_endpoint'],
+            'logsByStatus' => $dashboardData['logs_by_status'],
+            'logsByDate' => $dashboardData['logs_by_date'],
+            'recentLogs' => $dashboardData['recent_logs'],
+            'avgExecutionTime' => $dashboardData['avg_execution_time'],
+        ]);
     }
 }

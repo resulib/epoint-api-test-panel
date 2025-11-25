@@ -20,7 +20,7 @@ class CreateEpointLogsTable extends Migration
             $table->json('request_params');
             $table->text('request_data');
             $table->text('request_signature');
-            $table->json('response_data');
+            $table->json('response_data')->nullable();
             $table->integer('response_status_code');
             $table->string('transaction_id', 50)->nullable()->index();
             $table->string('order_id', 255)->nullable()->index();

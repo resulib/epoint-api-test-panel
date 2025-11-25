@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, rgb(23, 100, 188) 0%, #764ba2 100%);
+            background: linear-gradient(135deg, rgb(255, 216, 235) 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px 0;
         }
@@ -61,38 +61,56 @@
         }
     </style>
     <div class="text-center mb-4">
-        <h1 class="text-white">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="white" style="vertical-align: middle;">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-            </svg>
-            Epoint API Test Panel
-        </h1>
+        <a href="/" style="text-decoration: none;">
+            <h1 class="text-white">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="white" style="vertical-align: middle;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                </svg>
+                Epoint API Test Panel
+            </h1>
+        </a>
         <p class="text-white">Test all Epoint payment gateway APIs</p>
 
         <!-- Navigation -->
         <div class="btn-group mt-3" role="group">
             <a href="{{ route('epoint.test') }}" class="btn btn-light {{ request()->routeIs('epoint.test') || request()->routeIs('epoint.execute') ? 'active' : '' }}">
-                🧪 Payment APIs
+                Payment APIs
+            </a>
+            <a href="{{ route('epoint.checkout') }}" class="btn btn-light {{ request()->routeIs('epoint.checkout*') ? 'active' : '' }}">
+                Checkout APIs
             </a>
             <a href="{{ route('epoint.invoice') }}" class="btn btn-light {{ request()->routeIs('epoint.invoice*') ? 'active' : '' }}">
-                🧾 Invoice APIs
+                Invoice APIs
             </a>
             <a href="{{ route('epoint.logs.index') }}" class="btn btn-light {{ request()->routeIs('epoint.logs.index') ? 'active' : '' }}">
-                📊 Logs
+                Logs
             </a>
             <a href="{{ route('epoint.logs.dashboard') }}" class="btn btn-light {{ request()->routeIs('epoint.logs.dashboard') ? 'active' : '' }}">
-                📈 Dashboard
+                Dashboard
+            </a>
+            <a href="{{ route('docs.index') }}" class="btn btn-info {{ request()->routeIs('docs.*') ? 'active' : '' }}">
+                📚 Dokumentasiya
             </a>
         </div>
     </div>
-
-
 </head>
 <body>
 <div class="container">
     @yield('content')
-</div>
 
+    <!-- User Info & Logout -->
+    <div class="mt-3 d-flex align-items-center justify-content-center gap-3">
+        <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+            @csrf
+            <button type="submit" class="btn btn-danger btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+                Logout
+            </button>
+        </form>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>

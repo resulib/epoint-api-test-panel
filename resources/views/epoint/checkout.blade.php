@@ -2,17 +2,17 @@
 
 @section('content')
     <div class="main-container">
-        <form method="POST" action="{{ route('epoint.execute') }}" id="apiForm">
+        <form method="POST" action="{{ route('epoint.checkout.execute') }}" id="apiForm">
             @csrf
 
-            <!-- API Selector (qalan hissə eyni) -->
+            <!-- API Selector -->
             <div class="api-selector">
                 <div class="row align-items-center">
                     <div class="col-md-12">
-                        <label class="form-label fw-bold">Select API Endpoint:</label>
+                        <label class="form-label fw-bold">Select Checkout API Endpoint:</label>
                         <select name="api" id="apiSelect" class="form-select form-select-lg" required>
                             <option value="">-- Choose API --</option>
-                            @foreach($apis as $key => $api)
+                            @foreach($checkoutApis as $key => $api)
                                 <option value="{{ $key }}"
                                         data-endpoint="{{ $api['endpoint'] }}"
                                         data-full-url="{{ $api['full_url'] }}"
@@ -36,16 +36,16 @@
 
             <div class="text-center mt-4 mb-4">
                 <button type="submit" class="btn btn-primary btn-lg btn-execute">
-                    🚀 Execute API Call
+                    Execute Checkout API
                 </button>
             </div>
 
-            <!-- ✅ Custom Keys Section (Accordion) -->
+            <!-- Custom Keys Section (Accordion) -->
             <div class="accordion mb-4" id="customKeysAccordion">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingKeys">
                         <button class="accordion-button collapsed bg-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseKeys" aria-expanded="false" aria-controls="collapseKeys">
-                            🔑 Authentication Keys
+                            Authentication Keys
                             <small class="text-muted ms-2">(Optional - uses .env keys by default)</small>
                         </button>
                     </h2>
@@ -87,7 +87,7 @@
 
                             <div class="mt-3">
                                 <button type="button" class="btn btn-sm btn-secondary" id="togglePrivateKey">
-                                    👁️ Show/Hide Private Key
+                                    Show/Hide Private Key
                                 </button>
                             </div>
 
@@ -108,8 +108,7 @@
                     @if($result['response']['status'] === 'success' && isset($result['response']['redirect_url']))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <h5 class="alert-heading">Payment Request Successful!</h5>
-                            <p class="mb-2">Transaction: <code>{{ $result['response']['transaction'] ?? 'N/A' }}</code></p>
-                            <p class="mb-2">Redirect URL received:</p>
+                            <p class="mb-2">Transaction created successfully. Redirect URL received:</p>
                             <code class="d-block mb-2">{{ $result['response']['redirect_url'] }}</code>
                             <hr>
                             <a href="{{ $result['response']['redirect_url'] }}" target="_blank" class="btn btn-success btn-sm">
@@ -147,16 +146,16 @@
                         </li>
                         @if(isset($result['response']['raw_response']))
                             <li class="nav-item">
-                                <button class="nav-link text-warning" data-bs-toggle="tab" data-bs-target="#raw-tab">Raw Response</button>
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#raw-tab">Raw Response</button>
                             </li>
                         @endif
-                        @if(isset($result['response']['redirect_url']) || isset($result['response']['widget_url']))
+                        @if(isset($result['response']['redirect_url']) || isset($result['response']['checkout_url']))
                             <li class="nav-item">
-                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#redirect-tab">Redirect</button>
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#redirect-tab">Redirect URL</button>
                             </li>
                         @endif
                     </ul>
-                    <a href="{{ route('epoint.test') }}" class="btn btn-secondary">
+                    <a href="{{ route('epoint.checkout') }}" class="btn btn-secondary">
                         🏠 Ana Səhifə
                     </a>
                 </div>
@@ -174,6 +173,7 @@
                                 <strong>Raw Response Body:</strong> API returned HTML instead of JSON
                             </div>
 
+                            <!-- Check if response is HTML -->
                             @php
                                 $rawBody = $result['response']['raw_response'];
                                 $isHtml = preg_match('/<html|<form|<!DOCTYPE/i', $rawBody);
@@ -184,6 +184,7 @@
                                     <strong>HTML Response Detected:</strong> The API returned an HTML page (likely a redirect form)
                                 </div>
 
+                                <!-- Tabs for HTML view -->
                                 <ul class="nav nav-pills mb-3">
                                     <li class="nav-item">
                                         <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#html-preview">Preview</button>
@@ -210,32 +211,23 @@
                             @endif
                         </div>
                     @endif
-                    @if(isset($result['response']['redirect_url']) || isset($result['response']['widget_url']))
+                    @if(isset($result['response']['redirect_url']) || isset($result['response']['checkout_url']))
                         <div class="tab-pane fade" id="redirect-tab">
-                            @if(isset($result['response']['redirect_url']))
-                                <div class="alert alert-info">
-                                    <strong>Redirect URL:</strong><br>
-                                    <code>{{ $result['response']['redirect_url'] }}</code>
-                                </div>
-                                <a href="{{ $result['response']['redirect_url'] }}" target="_blank" class="btn btn-success btn-lg w-100 redirect-button mb-2">
-                                    Open Payment Page
-                                </a>
-                            @endif
-                            @if(isset($result['response']['widget_url']))
-                                <div class="alert alert-warning mt-2">
-                                    <strong>Widget URL:</strong><br>
-                                    <code>{{ $result['response']['widget_url'] }}</code>
-                                </div>
-                                <a href="{{ $result['response']['widget_url'] }}" target="_blank" class="btn btn-warning btn-lg w-100 redirect-button">
-                                    Open Widget (Apple Pay / Google Pay)
-                                </a>
-                            @endif
+                            <div class="alert alert-info">
+                                <strong>Redirect URL:</strong><br>
+                                <code>{{ $result['response']['redirect_url'] ?? $result['response']['checkout_url'] }}</code>
+                            </div>
+                            <a href="{{ $result['response']['redirect_url'] ?? $result['response']['checkout_url'] }}" target="_blank" class="btn btn-success btn-lg w-100 redirect-button">
+                                Open Payment Page
+                            </a>
                         </div>
                     @endif
                 </div>
 
                 <div class="alert alert-{{ $result['status_code'] == 200 ? 'success' : 'danger' }} mt-3">
                     <strong>HTTP Status:</strong> {{ $result['status_code'] }}
+                    <br>
+                    <strong>Execution Time:</strong> {{ number_format($result['execution_time'], 2) }}ms
                 </div>
             </div>
         @endif
@@ -245,7 +237,7 @@
 @push('scripts')
 
     <script>
-        // 👁️ Show/Hide private key button
+        // Show/Hide private key button
         document.addEventListener('DOMContentLoaded', function () {
             const toggleButton = document.getElementById('togglePrivateKey');
             const privateKeyInput = document.querySelector('input[name="custom_private_key"]');
@@ -257,7 +249,7 @@
     </script>
 
     <script>
-        const apis = @json($apis);
+        const checkoutApis = @json($checkoutApis);
 
         // Toggle private key visibility
         document.getElementById('togglePrivateKey').addEventListener('click', function() {
@@ -265,7 +257,7 @@
             input.type = input.type === 'password' ? 'text' : 'password';
         });
 
-        // API selector logic (eyni qalır)
+        // API selector logic
         document.getElementById('apiSelect').addEventListener('change', function() {
             const selectedApi = this.value;
             const container = document.getElementById('parametersContainer');
@@ -278,7 +270,7 @@
                 return;
             }
 
-            const api = apis[selectedApi];
+            const api = checkoutApis[selectedApi];
 
             fullUrlText.textContent = api.full_url;
             urlDisplay.style.display = 'block';
@@ -289,12 +281,8 @@
                 html += '<div class="col-12"><div class="alert alert-info">This API has no parameters</div></div>';
             } else {
                 Object.entries(api.params).forEach(([paramName, paramConfig]) => {
-                    // Use full width for URL fields
-                    const isUrlField = paramName.includes('_url') || paramName.includes('redirect');
-                    const colClass = isUrlField ? 'col-md-12' : 'col-md-6';
-
                     html += `
-                <div class="${colClass} param-group">
+                <div class="col-md-6 param-group">
                     <label class="form-label">
                         ${paramName}
                         ${paramConfig.required ? '<span class="text-danger">*</span>' : ''}

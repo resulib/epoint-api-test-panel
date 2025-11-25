@@ -1,64 +1,147 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Epoint Payment Gateway Integration
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel](https://img.shields.io/badge/Laravel-8.x-red?style=flat-square&logo=laravel)
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-blue?style=flat-square&logo=php)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen?style=flat-square)
 
-## About Laravel
+**Enterprise-level Epoint Payment Gateway inteqrasiyası - Clean Architecture ilə**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+[Sürətli Başlanğıc](#-sürətli-başlanğıc) • [API Docs](API_DOCUMENTATION.md) • [Refactoring Report](README_REFACTORING.md)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Xüsusiyyətlər
 
-## Learning Laravel
+### 💳 Payment Gateway
+- ✅ Payment Request, Get Status, Card Registration
+- ✅ Execute Pay, Refund, Reverse, Pre-Auth
+- ✅ Split Payment, Wallet Management
+- ✅ Apple Pay & Google Pay (Widget Token)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 🧾 Invoice Management
+- ✅ Invoice yaratma, yeniləmə, baxış
+- ✅ SMS və Email göndərmə
+- ✅ Şablon sistemi
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🏗️ Architecture
+- ✅ Repository Pattern, Service Layer
+- ✅ DTO (Data Transfer Objects)
+- ✅ FormRequest Validation
+- ✅ Custom Exception Handling
+- ✅ SOLID Principles
 
-## Laravel Sponsors
+### 🔒 Security
+- ✅ Rate Limiting, Signature Verification
+- ✅ CSRF Protection, Input Validation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+---
 
-### Premium Partners
+## 📦 Quraşdırma
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+```bash
+# 1. Layihəni klonlayın
+git clone https://github.com/your-repo/epoint-integration.git
+cd epoint-integration
 
-## Contributing
+# 2. Asılılıqları yükləyin
+composer install
+npm install
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 3. Environment konfiqurasiyası
+cp .env.example .env
+php artisan key:generate
 
-## Code of Conduct
+# 4. .env faylında Epoint məlumatlarını daxil edin
+EPOINT_PUBLIC_KEY=your_public_key_here
+EPOINT_PRIVATE_KEY=your_private_key_here
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 5. Database quraşdırması
+php artisan migrate
 
-## Security Vulnerabilities
+# 6. Serveri işə salın
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🚀 Sürətli Başlanğıc
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```php
+use App\Services\EpointService;
+
+// Ödəniş sorğusu
+$result = $epointService->paymentRequest([
+    'amount' => 10.50,
+    'currency' => 'AZN',
+    'language' => 'az',
+    'order_id' => 'ORDER_' . time(),
+]);
+
+if ($result['response']['status'] === 'success') {
+    return redirect($result['response']['payment_url']);
+}
+```
+
+**Ətraflı:** [API_QUICK_START.md](API_QUICK_START.md)
+
+---
+
+## 🔗 API Endpoint-ləri
+
+| Endpoint | Method | Təsvir |
+|----------|--------|--------|
+| `/api/1/request` | POST | Ödəniş sorğusu |
+| `/api/1/get-status` | POST | Status yoxlama |
+| `/api/1/card-registration` | POST | Kart qeydiyyatı |
+| `/api/1/execute-pay` | POST | Saxlanmış kartla ödəniş |
+| `/api/1/refund-request` | POST | Geri qaytarma |
+
+**Ətraflı:** [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+
+---
+
+## 🧪 Testlər
+
+```bash
+# Bütün testlər
+vendor/bin/phpunit
+
+# Coverage: 60%+
+vendor/bin/phpunit --coverage-html coverage
+```
+
+---
+
+## 📚 Dokumentasiya
+
+- 📖 [API Documentation](API_DOCUMENTATION.md) - Ətraflı API sənədləri
+- 🚀 [Quick Start Guide](API_QUICK_START.md) - 5 dəqiqəlik bələdçi
+- 🏗️ [Refactoring Report](README_REFACTORING.md) - Architecture hesabatı
+- 📮 [Postman Collection](POSTMAN_COLLECTION.json) - Test collection
+
+---
+
+## 📊 Architecture
+
+```
+Presentation → Application → Domain → Infrastructure
+(Controllers)  (Services)    (Models)  (Database/APIs)
+```
+
+**Folder Strukturu:**
+- `app/DTOs/` - Data Transfer Objects
+- `app/Repositories/` - Repository Pattern
+- `app/Services/` - Business Logic
+- `app/Http/Requests/` - FormRequest Validations
+- `app/Exceptions/` - Custom Exceptions
+
+---
+
+## 📄 Lisenziya
+
+MIT License
+
+---
+
+Made with ❤️ in Azerbaijan 🇦🇿

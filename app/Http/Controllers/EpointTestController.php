@@ -133,6 +133,8 @@ class EpointTestController extends Controller
                     'order_id' => ['type' => 'text', 'required' => true, 'default' => 'TEST_' . time()],
                     'description' => ['type' => 'text', 'required' => false, 'default' => 'Test payment'],
                     'is_installment' => ['type' => 'select', 'required' => false, 'default' => '0', 'options' => ['0' => 'No', '1' => 'Yes']],
+                    'success_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/success')],
+                    'error_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/error')],
                 ]
             ],
             'get-status' => [
@@ -176,6 +178,8 @@ class EpointTestController extends Controller
                     'amount' => ['type' => 'number', 'required' => true, 'default' => '0.01'],
                     'currency' => ['type' => 'select', 'required' => true, 'default' => 'AZN', 'options' => ['AZN']],
                     'description' => ['type' => 'text', 'required' => false, 'default' => 'Register card and pay'],
+                    'success_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/success')],
+                    'error_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/error')],
                 ]
             ],
             'refund-request' => [
@@ -208,12 +212,15 @@ class EpointTestController extends Controller
                 'full_url' => $baseUrl . '/split-request',
                 'params' => [
                     'amount' => ['type' => 'number', 'required' => true, 'default' => '0.01'],
+                    'wallet_id' => ['type' => 'text', 'required' => false, 'default' => ''],
                     'split_user' => ['type' => 'text', 'required' => true, 'default' => 'i000000002'],
                     'split_amount' => ['type' => 'number', 'required' => true, 'default' => '0.01'],
                     'currency' => ['type' => 'select', 'required' => true, 'default' => 'AZN', 'options' => ['AZN']],
                     'language' => ['type' => 'select', 'required' => true, 'default' => 'az', 'options' => ['az', 'en', 'ru']],
                     'order_id' => ['type' => 'text', 'required' => true, 'default' => 'SPLIT_' . time()],
                     'description' => ['type' => 'text', 'required' => false, 'default' => 'Split payment'],
+                    'success_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/success')],
+                    'error_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/error')],
                 ]
             ],
             'split-execute-pay' => [
@@ -241,6 +248,8 @@ class EpointTestController extends Controller
                     'language' => ['type' => 'select', 'required' => true, 'default' => 'az', 'options' => ['az', 'en', 'ru']],
                     'order_id' => ['type' => 'text', 'required' => true, 'default' => 'PREAUTH_' . time()],
                     'description' => ['type' => 'text', 'required' => false, 'default' => 'Pre-authorization'],
+                    'success_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/success')],
+                    'error_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/error')],
                 ]
             ],
             'pre-auth-complete' => [
@@ -286,6 +295,64 @@ class EpointTestController extends Controller
 
 
 
+
+    /**
+     * Show checkout test panel
+     */
+    public function checkoutIndex()
+    {
+        $checkoutApis = $this->getAvailableCheckoutApis();
+        return view('epoint.checkout', compact('checkoutApis'));
+    }
+
+    /**
+     * Execute Checkout API test
+     */
+    public function checkoutExecute(Request $request)
+    {
+        $apiKey = $request->input('api');
+        $params = $request->except(['_token', 'api', 'custom_public_key', 'custom_private_key']);
+
+        // Custom keys
+        $customPublicKey = $request->input('custom_public_key');
+        $customPrivateKey = $request->input('custom_private_key');
+
+        if (!empty($customPublicKey) && !empty($customPrivateKey)) {
+            $this->epointService->setCustomKeys($customPublicKey, $customPrivateKey);
+        }
+
+        // Remove empty params
+        $params = array_filter($params, function($value) {
+            return $value !== null && $value !== '';
+        });
+
+        // Convert numeric strings
+        foreach ($params as $key => $value) {
+            if (is_numeric($value)) {
+                $params[$key] = (float) $value;
+            }
+        }
+
+        $result = null;
+
+        switch ($apiKey) {
+            case 'checkout-request':
+                $result = $this->epointService->checkoutRequest($params);
+                break;
+            default:
+                return back()->with('error', 'Invalid Checkout API selected');
+        }
+
+        $checkoutApis = $this->getAvailableCheckoutApis();
+
+        return view('epoint.checkout', [
+            'checkoutApis' => $checkoutApis,
+            'result' => $result,
+            'selectedApi' => $apiKey,
+            'customPublicKey' => $customPublicKey,
+            'customPrivateKey' => $customPrivateKey,
+        ]);
+    }
 
     /**
      * Show invoice test panel
@@ -444,6 +511,32 @@ class EpointTestController extends Controller
                 'params' => [
                     'id' => ['type' => 'number', 'required' => true, 'default' => '1'],
                     'email' => ['type' => 'email', 'required' => true, 'default' => 'test@example.com'],
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * Get available Checkout APIs
+     */
+    private function getAvailableCheckoutApis()
+    {
+        $baseUrl = config('services.epoint.base_url', 'https://epoint.az/api/1');
+
+        return [
+            'checkout-request' => [
+                'name' => 'Checkout Request',
+                'endpoint' => '/checkout',
+                'full_url' => $baseUrl . '/checkout',
+                'params' => [
+                    'amount' => ['type' => 'number', 'required' => true, 'default' => '0.01'],
+                    'currency' => ['type' => 'select', 'required' => true, 'default' => 'AZN', 'options' => ['AZN']],
+                    'language' => ['type' => 'select', 'required' => true, 'default' => 'az', 'options' => ['az', 'en', 'ru']],
+                    'order_id' => ['type' => 'text', 'required' => true, 'default' => 'CHECKOUT_' . time()],
+                    'description' => ['type' => 'text', 'required' => false, 'default' => 'Checkout payment'],
+                    'is_installment' => ['type' => 'select', 'required' => false, 'default' => '0', 'options' => ['0' => 'No', '1' => 'Yes']],
+                    'success_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/success')],
+                    'error_redirect_url' => ['type' => 'text', 'required' => false, 'default' => url('/payment/error')],
                 ]
             ],
         ];

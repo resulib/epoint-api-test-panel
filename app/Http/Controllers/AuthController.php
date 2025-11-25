@@ -2,28 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-
-    public function index()
+    /**
+     * Show login form
+     */
+    public function index(): View
     {
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    /**
+     * Handle login request
+     */
+    public function login(LoginRequest $request): RedirectResponse
     {
-        $request->validate([
-            'username' => 'required',
-            'password' => 'required'
-        ]);
-
-        $credentials = [
-            'name' => $request->username,
-            'password' => $request->password
-        ];
+        $credentials = $request->only(['email', 'password']);
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
@@ -32,7 +32,20 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'login_error' => 'Username və ya şifrə yanlışdır!'
-        ])->withInput(); // username input geri qayıtsın
+            'login_error' => 'Email və ya şifrə yanlışdır!'
+        ])->withInput($request->only('email'));
+    }
+
+    /**
+     * Handle logout request
+     */
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('success', 'Uğurla çıxış etdiniz!');
     }
 }

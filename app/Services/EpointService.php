@@ -58,8 +58,8 @@ class EpointService
         // Generate signature
         $signature = $this->generateSignature($data);
 
-        // Make request
-        $response = Http::post($this->baseUrl . $endpoint, [
+        // Make request as form data (application/x-www-form-urlencoded)
+        $response = Http::asForm()->post($this->baseUrl . $endpoint, [
             'data' => $data,
             'signature' => $signature
         ]);
@@ -67,7 +67,29 @@ class EpointService
         $endTime = microtime(true);
         $executionTime = ($endTime - $startTime) * 1000;
 
+        // Get raw body for debugging
+        $rawBody = $response->body();
+
+        // Try to parse JSON, fallback to raw body
         $responseData = $response->json();
+
+        if (!$responseData) {
+            // Try to extract error from HTML
+            $errorMessage = 'Failed to parse JSON response';
+
+            if (preg_match('/<div class="text text-danger">(.+?)<\/div>/i', $rawBody, $matches)) {
+                $errorMessage = trim(strip_tags($matches[1]));
+            } elseif (preg_match('/<title>(.+?)<\/title>/i', $rawBody, $matches)) {
+                $errorMessage = trim(strip_tags($matches[1]));
+            }
+
+            $responseData = [
+                'status' => 'error',
+                'error' => $errorMessage,
+                'raw_response' => $rawBody,
+                'http_status' => $response->status()
+            ];
+        }
 
         // Extract common fields
         $transactionId = $responseData['transaction'] ?? null;
@@ -234,7 +256,13 @@ class EpointService
         return $this->makeRequest('/wallet/payment', $params, 'Wallet Payment');
     }
 
-
+    /**
+     * Checkout Request (similar to payment request but redirects to /checkout page)
+     */
+    public function checkoutRequest($params)
+    {
+        return $this->makeRequest('/checkout', $params, 'Checkout Request');
+    }
 
     /**
      * Create Invoice
@@ -346,7 +374,7 @@ class EpointService
         $endTime = microtime(true);
         $executionTime = ($endTime - $startTime) * 1000;
 
-        $responseData = $response->json();
+        $responseData = $response->json() ?? [];
 
         // Log to database
         $logEntry = EpointLog::create([

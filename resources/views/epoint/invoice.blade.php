@@ -40,51 +40,62 @@
                 </button>
             </div>
 
-            <!-- Custom Keys Section -->
-            <div class="card mb-4">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0">
-                        🔑 Authentication Keys
-                        <small class="text-muted">(Optional - uses .env keys by default)</small>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <strong>Default:</strong> Using keys from <code>.env</code> file<br>
-                        <code>EPOINT_PUBLIC_KEY={{ config('services.epoint.public_key') }}</code><br>
-                        <small class="text-muted">Leave fields below empty to use default keys</small>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Custom Public Key</label>
-                            <input
-                                type="text"
-                                name="custom_public_key"
-                                class="form-control"
-                                placeholder="i000000002"
-                                value="{{ $customPublicKey ?? '' }}"
-                            >
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Custom Private Key</label>
-                            <input
-                                type="password"
-                                name="custom_private_key"
-                                class="form-control"
-                                placeholder="your_private_key_here"
-                                value="{{ $customPrivateKey ?? '' }}"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-sm btn-secondary" id="togglePrivateKey">
-                            👁️ Show/Hide Private Key
+            <!-- Custom Keys Section (Accordion) -->
+            <div class="accordion mb-4" id="customKeysAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingKeys">
+                        <button class="accordion-button collapsed bg-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseKeys" aria-expanded="false" aria-controls="collapseKeys">
+                            🔑 Authentication Keys
+                            <small class="text-muted ms-2">(Optional - uses .env keys by default)</small>
                         </button>
+                    </h2>
+                    <div id="collapseKeys" class="accordion-collapse collapse" aria-labelledby="headingKeys" data-bs-parent="#customKeysAccordion">
+                        <div class="accordion-body">
+
+                            <div class="alert alert-info">
+                                <strong>Default:</strong> Using keys from <code>.env</code> file<br>
+                                <code>EPOINT_PUBLIC_KEY={{ config('services.epoint.public_key') }}</code><br>
+                                <small class="text-muted">Leave fields below empty to use default keys</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Custom Public Key</label>
+                                    <input
+                                        type="text"
+                                        name="custom_public_key"
+                                        class="form-control"
+                                        placeholder="i000000002"
+                                        value="{{ $customPublicKey ?? '' }}"
+                                        autocomplete="off"
+                                    >
+                                    <small class="text-muted">Example: i000000001, i000000002</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Custom Private Key</label>
+                                    <input
+                                        type="password"
+                                        name="custom_private_key"
+                                        class="form-control"
+                                        placeholder="your_private_key_here"
+                                        value="{{ $customPrivateKey ?? '' }}"
+                                        autocomplete="new-password"
+                                    >
+                                    <small class="text-muted">Your merchant private key</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-sm btn-secondary" id="togglePrivateKey">
+                                    👁️ Show/Hide Private Key
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
+
         </form>
 
         @if(isset($result))
@@ -104,19 +115,24 @@
                     </div>
                 @endif
 
-                <ul class="nav nav-tabs mb-3" id="resultTabs" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#response-tab">Response</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#request-tab">Request</button>
-                    </li>
-                    @if(isset($result['response']['url']))
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <ul class="nav nav-tabs mb-0" id="resultTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#invoice-url-tab">Invoice URL</button>
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#response-tab">Response</button>
                         </li>
-                    @endif
-                </ul>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#request-tab">Request</button>
+                        </li>
+                        @if(isset($result['response']['url']))
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#invoice-url-tab">Invoice URL</button>
+                            </li>
+                        @endif
+                    </ul>
+                    <a href="{{ route('epoint.invoice') }}" class="btn btn-secondary">
+                        🏠 Ana Səhifə
+                    </a>
+                </div>
 
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="response-tab">
@@ -155,13 +171,21 @@
 
 @push('scripts')
     <script>
-        const invoiceApis = @json($invoiceApis);
+        // Show/Hide private key button
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButton = document.getElementById('togglePrivateKey');
+            const privateKeyInput = document.querySelector('input[name="custom_private_key"]');
 
-        // Toggle private key visibility
-        document.getElementById('togglePrivateKey').addEventListener('click', function() {
-            const input = document.querySelector('input[name="custom_private_key"]');
-            input.type = input.type === 'password' ? 'text' : 'password';
+            if (toggleButton && privateKeyInput) {
+                toggleButton.addEventListener('click', function () {
+                    privateKeyInput.type = privateKeyInput.type === 'password' ? 'text' : 'password';
+                });
+            }
         });
+    </script>
+
+    <script>
+        const invoiceApis = @json($invoiceApis);
 
         // API selector logic
         document.getElementById('apiSelect').addEventListener('change', function() {

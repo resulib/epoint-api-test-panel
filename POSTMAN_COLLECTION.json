@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "Epoint Payment Gateway API",
+    "description": "Epoint Payment Gateway API Collection - Azerbaijan",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://epoint.az/api/1",
+      "type": "string"
+    },
+    {
+      "key": "test_base_url",
+      "value": "https://test.epoint.az/api/1",
+      "type": "string"
+    },
+    {
+      "key": "public_key",
+      "value": "your_public_key_here",
+      "type": "string"
+    },
+    {
+      "key": "private_key",
+      "value": "your_private_key_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Payment APIs",
+      "item": [
+        {
+          "name": "1. Payment Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "data",
+                  "value": "{{encoded_data}}",
+                  "description": "Base64 encoded JSON params"
+                },
+                {
+                  "key": "signature",
+                  "value": "{{signature}}",
+                  "description": "Base64 encoded SHA1 signature"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/request",
+              "host": ["{{base_url}}"],
+              "path": ["request"]
+            },
+            "description": "Create a new payment request"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/request"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": "{\n  \"status\": \"success\",\n  \"transaction\": \"te000000001\",\n  \"payment_url\": \"https://epoint.az/checkout?token=abc123\",\n  \"token\": \"abc123def456\",\n  \"order_id\": \"TEST_123456\",\n  \"amount\": 10.50,\n  \"currency\": \"AZN\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "2. Get Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "data",
+                  "value": "{{encoded_data}}"
+                },
+                {
+                  "key": "signature",
+                  "value": "{{signature}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/get-status",
+              "host": ["{{base_url}}"],
+              "path": ["get-status"]
+            },
+            "description": "Check transaction status"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"transaction\": \"te000000001\",\n  \"payment_status\": \"paid\",\n  \"order_id\": \"TEST_123456\",\n  \"amount\": 10.50,\n  \"currency\": \"AZN\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "3. Card Registration",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/card-registration"
+            },
+            "description": "Register a new card (tokenization)"
+          }
+        },
+        {
+          "name": "4. Execute Payment (Saved Card)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/execute-pay"
+            },
+            "description": "Execute payment with saved card"
+          }
+        },
+        {
+          "name": "5. Card Registration + Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/card-registration-with-pay"
+            }
+          }
+        },
+        {
+          "name": "6. Refund Request",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/refund-request"
+            },
+            "description": "Refund a payment"
+          }
+        },
+        {
+          "name": "7. Reverse Transaction",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/reverse"
+            },
+            "description": "Reverse/cancel a transaction"
+          }
+        },
+        {
+          "name": "8. Pre-Auth Request",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/pre-auth-request"
+            }
+          }
+        },
+        {
+          "name": "9. Pre-Auth Complete",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/pre-auth-complete"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Split Payment APIs",
+      "item": [
+        {
+          "name": "Split Payment Request",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/split-request"
+            }
+          }
+        },
+        {
+          "name": "Split Execute Pay",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/split-execute-pay"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet APIs",
+      "item": [
+        {
+          "name": "Wallet Status",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/wallet/status"
+            }
+          }
+        },
+        {
+          "name": "Wallet Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/wallet/payment"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoice APIs",
+      "item": [
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/create"
+            }
+          }
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/update"
+            }
+          }
+        },
+        {
+          "name": "View Invoice",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/view"
+            }
+          }
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/list"
+            }
+          }
+        },
+        {
+          "name": "Send Invoice via SMS",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/send-sms"
+            }
+          }
+        },
+        {
+          "name": "Send Invoice via Email",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/invoices/send-email"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout API",
+      "item": [
+        {
+          "name": "Checkout Request",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/checkout"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Widget APIs",
+      "item": [
+        {
+          "name": "Widget Token (Apple/Google Pay)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/token/widget"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
